@@ -150,13 +150,3 @@ class ParlamentPortalCrawler:
         except Exception as e:
             logging.error(f"Error in get_latest_diploma_document_markdown: {e}")
             return None
-
-
-crawler = ParlamentPortalCrawler(
-    base_url="https://www.parlamento.pt",
-    main_page_url="https://www.parlamento.pt/Paginas/Ultimosdiplomasaprovados.aspx",
-)
-logging.info("Starting crawler execution")
-result = crawler.get_latest_diploma_document_markdown()
-logging.info("Crawler execution completed")
-print(result)

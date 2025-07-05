@@ -18,10 +18,11 @@ class LLMDiplomaConsumer:
 
     model_name: str = "gemini-2.5-pro"
     client: genai.Client = field(init=False)
+    api_key: str = os.environ["GEMINI_API_KEY"]
 
     def __post_init__(self):
         try:
-            self.client = genai.Client()
+            self.client = genai.Client(api_key=self.api_key)
             logging.info(
                 f"Successfully initialized Gemini Client for model '{self.model_name}'."
             )
@@ -45,6 +46,8 @@ class LLMDiplomaConsumer:
 
             Texto original da inicitiva (contexto do diploma):
             {diploma_context_markdown}
+
+            Muito Importante: Não adiciones qualquer tipo de frase introdutoria (por exemplo: "Com base nos documentos fornecidos, aqui está o X post:"). O conteúdo retornado deve ser apenas e só o conteúdo do post.
         """
 
     def get_post_content(
@@ -69,31 +72,3 @@ class LLMDiplomaConsumer:
         except Exception as e:
             logging.error(f"An error occurred while calling the Gemini API: {e}")
             return "Error: An API error occurred while generating the post content."
-
-
-# --- Example Usage ---
-if __name__ == "__main__":
-    if "GEMINI_API_KEY" not in os.environ:
-        print("ERROR: Please set the GEMINI_API_KEY environment variable.")
-    else:
-        diploma_content = """
-        - Artigo 1: Alteração ao Código do Trabalho
-        - O presente diploma procede à segunda alteração à Lei n.º 7/2009.
-        - Artigo 2: Aditamento ao Código do Trabalho
-        - É aditado o artigo 127.º-A, com a seguinte redação:
-        - "Artigo 127.º-A: O trabalhador tem direito a uma folga remunerada no dia do seu aniversário."
-        """
-        context_text = """
-        - Exposição de motivos:
-        - A presente iniciativa legislativa visa reforçar os direitos dos trabalhadores,
-        - promovendo um melhor equilíbrio entre a vida profissional e pessoal.
-        """
-
-        consumer = LLMDiplomaConsumer()
-
-        post = consumer.get_post_content(
-            diploma_markdown=diploma_content, diploma_context_markdown=context_text
-        )
-        print("\n--- Generated X Post ---\n")
-        print(post)
-        print("\n------------------------\n")
