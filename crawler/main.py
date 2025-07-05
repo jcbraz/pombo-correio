@@ -53,12 +53,18 @@ class ParlamentPortalCrawler:
             raise
 
     def _get_diploma_process_state(self, latest_diploma_url: str) -> bool:
+        """
+        Use a redis db (key-value remote database) to keep track if diploma was already processed and posted or not.
+        Logic:
+            - if key "latest_diploma" exists and is equal to the latest_diploma_url, it was processed => break the workflow.
+            - else, continue the workflow.
+        """
         try:
-            url = "https://workable-bulldog-35220.upstash.io/get/latest_diploma"
+            url = os.environ["REDIS_BASE_URL"] + "/get/latest_diploma"
             headers = {"Authorization": f"Bearer {os.environ['REDIS_BEARER_KEY']}"}
             response = requests.get(url, headers=headers)
 
-            if response.status_code == 200:
+            if response.status_code == 200:  # 200 == successful request
                 result = response.json()
                 diploma_state = result.get("result")
 
@@ -79,14 +85,17 @@ class ParlamentPortalCrawler:
             return False
 
     def _set_diploma_process_state(self, latest_diploma_url: str) -> None:
+        """
+        Set recently processed diploma as "processed" in redis database
+        """
         try:
-            url = "https://workable-bulldog-35220.upstash.io/set/latest_diploma"
+            url = os.environ["REDIS_BASE_URL"] + "/set/latest_diploma"
             headers = {"Authorization": f"Bearer {os.environ['REDIS_BEARER_KEY']}"}
             response = requests.post(url, headers=headers, data=latest_diploma_url)
 
             if response.status_code != 200:
                 logging.error(f"HTTP request failed with status {response.status_code}")
-        except Exception as e:
+        except (requests.exceptions.RequestException, Exception) as e:
             logging.error(f"Error setting diploma state: {e}")
 
     def _get_document_markdown(self, document_url: str) -> str | None:
@@ -112,8 +121,8 @@ class ParlamentPortalCrawler:
                 latest_diploma_url=latest_diploma_url
             )
 
-            # if is_diploma_already_processed:
-            #     return None
+            if is_diploma_already_processed:
+                return None
 
             latest_diploma_page_html = self._get_page_html(url=latest_diploma_url)
             if isinstance(latest_diploma_page_html, Exception):
@@ -123,7 +132,10 @@ class ParlamentPortalCrawler:
             diploma_document_urls = [
                 str(x.get("href"))
                 for x in crawler.find_all(
-                    "a", {"title": "Detalhe do documento (formato PDF)"}
+                    "a",
+                    {
+                        "title": "Detalhe do documento (formato PDF)"
+                    },  # get html a tag containing the url to dowload the diploma
                 )
             ]
 
