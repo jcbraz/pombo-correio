@@ -3,7 +3,7 @@ import os
 
 from crawler.main import ParlamentPortalCrawler
 from llm.main import LLMDiplomaConsumer
-from x.main import XPublisher
+from publisher.main import XPublisher
 
 
 def run_cron_job():
