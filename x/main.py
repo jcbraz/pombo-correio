@@ -1,26 +1,41 @@
-# from dataclasses import dataclass
-
-
-# @dataclass
-# class XPublisher:
-#     pass
-
+import logging
 import os
+from dataclasses import dataclass
 
-import requests
+import tweepy
 
-url = "https://api.twitter.com/2/tweets"
 
-headers = {
-    "Authorization": f"Bearer {os.environ['X_BEARER_KEY']}",
-    "Content-Type": "application/json",
-}
+@dataclass
+class XPublisher:
+    consumer_key: str
+    consumer_secret: str
+    access_token: str
+    access_token_secret: str
 
-payload = {
-    "text": "Hello from the X API via Python!"  # Replace with your post content
-}
+    def __post_init__(
+        self,
+    ):
+        try:
+            self.client = tweepy.Client(
+                access_token=self.access_token,
+                access_token_secret=self.access_token_secret,
+                consumer_key=self.consumer_key,
+                consumer_secret=self.consumer_secret,
+            )
+        except Exception:
+            logging.error("Failed to initiliaze X Client.")
 
-response = requests.post(url, headers=headers, json=payload)
+    def create_post(self, text: str):
+        try:
+            self.client.create_tweet(text=text)
+            logging.info("Success!")
+        except Exception as e:
+            logging.error(f"Error publishing X post with text: {text}. Error: {e}")
 
-print(response.status_code)
-print(response.json())
+
+publisher = XPublisher(
+    consumer_key=os.environ["X_CONSUMER_KEY"],
+    consumer_secret=os.environ["X_CONSUMER_SECRET"],
+    access_token=os.environ["X_ACCESS_TOKEN"],
+    access_token_secret=os.environ["X_ACCESS_TOKEN_SECRET"],
+)
